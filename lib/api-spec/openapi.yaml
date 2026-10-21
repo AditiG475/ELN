@@ -3,13 +3,19 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Academic lab notebook API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: Notebook
+    description: Projects, experiments, and collaboration
+  - name: Storage
+    description: Persistent experiment attachments
+  - name: AI
+    description: AI-assisted experiment note organization
 paths:
   /healthz:
     get:
@@ -24,6 +30,306 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /notebook/overview:
+    get:
+      operationId: getNotebookOverview
+      tags: [Notebook]
+      summary: Get project and activity overview
+      responses:
+        "200":
+          description: Overview of the signed-in user's shared notebook work
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotebookOverview"
+  /notebook/projects:
+    get:
+      operationId: listProjects
+      tags: [Notebook]
+      summary: List projects the signed-in user can access
+      responses:
+        "200":
+          description: Projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Project"
+    post:
+      operationId: createProject
+      tags: [Notebook]
+      summary: Create a research project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectInput"
+      responses:
+        "201":
+          description: Project created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+  /notebook/projects/{projectId}:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: getProject
+      tags: [Notebook]
+      summary: Get a project with experiments and collaborators
+      responses:
+        "200":
+          description: Project detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectDetail"
+        "404":
+          description: Project not found
+    patch:
+      operationId: updateProject
+      tags: [Notebook]
+      summary: Update project details
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectUpdate"
+      responses:
+        "200":
+          description: Updated project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+  /notebook/projects/{projectId}/experiments:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: integer
+    post:
+      operationId: createExperiment
+      tags: [Notebook]
+      summary: Create an experiment record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExperimentInput"
+      responses:
+        "201":
+          description: Experiment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Experiment"
+  /notebook/experiments/{experimentId}:
+    parameters:
+      - name: experimentId
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: getExperiment
+      tags: [Notebook]
+      summary: Get an experiment with attachments and comments
+      responses:
+        "200":
+          description: Experiment detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExperimentDetail"
+        "404":
+          description: Experiment not found
+    patch:
+      operationId: updateExperiment
+      tags: [Notebook]
+      summary: Update an experiment record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExperimentUpdate"
+      responses:
+        "200":
+          description: Updated experiment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Experiment"
+    delete:
+      operationId: deleteExperiment
+      tags: [Notebook]
+      summary: Delete an experiment record
+      responses:
+        "204":
+          description: Experiment deleted
+  /notebook/experiments/{experimentId}/comments:
+    parameters:
+      - name: experimentId
+        in: path
+        required: true
+        schema:
+          type: integer
+    post:
+      operationId: addExperimentComment
+      tags: [Notebook]
+      summary: Add a guide or scholar comment to an experiment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CommentInput"
+      responses:
+        "201":
+          description: Comment added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExperimentComment"
+  /notebook/projects/{projectId}/invites:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: integer
+    post:
+      operationId: createProjectInvite
+      tags: [Notebook]
+      summary: Create a shareable project invitation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InviteInput"
+      responses:
+        "201":
+          description: Invitation created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectInvite"
+  /notebook/invitations/{token}:
+    parameters:
+      - name: token
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getProjectInvite
+      tags: [Notebook]
+      summary: Preview a project invitation
+      responses:
+        "200":
+          description: Invitation preview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvitePreview"
+        "404":
+          description: Invitation not found or expired
+    post:
+      operationId: acceptProjectInvite
+      tags: [Notebook]
+      summary: Accept a project invitation
+      responses:
+        "200":
+          description: Invitation accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+  /storage/uploads/request-url:
+    post:
+      operationId: requestUploadUrl
+      tags: [Storage]
+      summary: Request a presigned URL for a private attachment upload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UploadUrlRequest"
+      responses:
+        "200":
+          description: Presigned URL and object path
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadUrlResponse"
+  /notebook/experiments/{experimentId}/attachments:
+    parameters:
+      - name: experimentId
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: listExperimentAttachments
+      tags: [Storage]
+      summary: List experiment attachments
+      responses:
+        "200":
+          description: Attachments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ExperimentAttachment"
+    post:
+      operationId: addExperimentAttachment
+      tags: [Storage]
+      summary: Save uploaded attachment metadata on an experiment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AttachmentInput"
+      responses:
+        "201":
+          description: Attachment linked to experiment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExperimentAttachment"
+  /ai/organize-experiment:
+    post:
+      operationId: organizeExperimentNotes
+      tags: [AI]
+      summary: Turn rough research notes into structured experiment sections
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExperimentNotesInput"
+      responses:
+        "200":
+          description: Suggested structured experiment sections
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExperimentNotesOutput"
 components:
   schemas:
     HealthStatus:
@@ -31,6 +337,223 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
-
+      required: [status]
+    Project:
+      type: object
+      required: [id, title, description, discipline, status, role, memberCount, experimentCount, updatedAt]
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        description: { type: string }
+        discipline: { type: string }
+        status: { type: string, enum: [active, paused, completed] }
+        role: { type: string, enum: [scholar, guide] }
+        memberCount: { type: integer }
+        experimentCount: { type: integer }
+        updatedAt: { type: string, format: date-time }
+    ProjectDetail:
+      allOf:
+        - $ref: "#/components/schemas/Project"
+        - type: object
+          required: [members, experiments]
+          properties:
+            members:
+              type: array
+              items: { $ref: "#/components/schemas/ProjectMember" }
+            experiments:
+              type: array
+              items: { $ref: "#/components/schemas/Experiment" }
+    ProjectInput:
+      type: object
+      required: [title, discipline, role]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 180 }
+        description: { type: string }
+        discipline: { type: string, minLength: 1, maxLength: 100 }
+        role: { type: string, enum: [scholar, guide] }
+    ProjectUpdate:
+      type: object
+      properties:
+        title: { type: string, minLength: 1, maxLength: 180 }
+        description: { type: string }
+        discipline: { type: string, minLength: 1, maxLength: 100 }
+        status: { type: string, enum: [active, paused, completed] }
+    ProjectMember:
+      type: object
+      required: [id, name, email, role, joinedAt]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        email: { type: string }
+        role: { type: string, enum: [scholar, guide] }
+        joinedAt: { type: string, format: date-time }
+    ProjectInvite:
+      type: object
+      required: [token, role, inviteUrl, expiresAt]
+      properties:
+        token: { type: string }
+        role: { type: string, enum: [scholar, guide] }
+        inviteUrl: { type: string }
+        expiresAt: { type: string, format: date-time }
+    InviteInput:
+      type: object
+      required: [email, role]
+      properties:
+        email: { type: string, format: email }
+        role: { type: string, enum: [scholar, guide] }
+    InvitePreview:
+      type: object
+      required: [projectTitle, discipline, inviterName, role, expiresAt]
+      properties:
+        projectTitle: { type: string }
+        discipline: { type: string }
+        inviterName: { type: string }
+        role: { type: string, enum: [scholar, guide] }
+        expiresAt: { type: string, format: date-time }
+    Experiment:
+      type: object
+      required: [id, projectId, title, status, experimentDate, hypothesis, materials, protocol, observations, results, conclusion, authorName, createdAt, updatedAt, attachmentCount, commentCount]
+      properties:
+        id: { type: integer }
+        projectId: { type: integer }
+        title: { type: string }
+        status: { type: string, enum: [planned, in_progress, complete] }
+        experimentDate: { type: string, format: date }
+        hypothesis: { type: string }
+        materials: { type: string }
+        protocol: { type: string }
+        observations: { type: string }
+        results: { type: string }
+        conclusion: { type: string }
+        authorName: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        attachmentCount: { type: integer }
+        commentCount: { type: integer }
+    ExperimentDetail:
+      allOf:
+        - $ref: "#/components/schemas/Experiment"
+        - type: object
+          required: [attachments, comments]
+          properties:
+            attachments:
+              type: array
+              items: { $ref: "#/components/schemas/ExperimentAttachment" }
+            comments:
+              type: array
+              items: { $ref: "#/components/schemas/ExperimentComment" }
+    ExperimentInput:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 180 }
+        status: { type: string, enum: [planned, in_progress, complete] }
+        experimentDate: { type: string, format: date }
+        hypothesis: { type: string }
+        materials: { type: string }
+        protocol: { type: string }
+        observations: { type: string }
+        results: { type: string }
+        conclusion: { type: string }
+    ExperimentUpdate:
+      type: object
+      properties:
+        title: { type: string, minLength: 1, maxLength: 180 }
+        status: { type: string, enum: [planned, in_progress, complete] }
+        experimentDate: { type: string, format: date }
+        hypothesis: { type: string }
+        materials: { type: string }
+        protocol: { type: string }
+        observations: { type: string }
+        results: { type: string }
+        conclusion: { type: string }
+    ExperimentAttachment:
+      type: object
+      required: [id, experimentId, fileName, contentType, size, objectPath, uploadedBy, createdAt]
+      properties:
+        id: { type: integer }
+        experimentId: { type: integer }
+        fileName: { type: string }
+        contentType: { type: string }
+        size: { type: integer }
+        objectPath: { type: string }
+        uploadedBy: { type: string }
+        createdAt: { type: string, format: date-time }
+    AttachmentInput:
+      type: object
+      required: [fileName, contentType, size, objectPath]
+      properties:
+        fileName: { type: string, minLength: 1 }
+        contentType: { type: string, minLength: 1 }
+        size: { type: integer, minimum: 1 }
+        objectPath: { type: string, minLength: 1 }
+    CommentInput:
+      type: object
+      required: [body]
+      properties:
+        body: { type: string, minLength: 1, maxLength: 3000 }
+    ExperimentComment:
+      type: object
+      required: [id, experimentId, body, authorName, authorRole, createdAt]
+      properties:
+        id: { type: integer }
+        experimentId: { type: integer }
+        body: { type: string }
+        authorName: { type: string }
+        authorRole: { type: string, enum: [scholar, guide] }
+        createdAt: { type: string, format: date-time }
+    NotebookOverview:
+      type: object
+      required: [activeProjects, experimentsThisWeek, awaitingReview, recentExperiments, projects]
+      properties:
+        activeProjects: { type: integer }
+        experimentsThisWeek: { type: integer }
+        awaitingReview: { type: integer }
+        recentExperiments:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecentExperiment"
+        projects:
+          type: array
+          items: { $ref: "#/components/schemas/Project" }
+    RecentExperiment:
+      type: object
+      required: [id, projectId, projectTitle, title, status, authorName, updatedAt]
+      properties:
+        id: { type: integer }
+        projectId: { type: integer }
+        projectTitle: { type: string }
+        title: { type: string }
+        status: { type: string, enum: [planned, in_progress, complete] }
+        authorName: { type: string }
+        updatedAt: { type: string, format: date-time }
+    UploadUrlRequest:
+      type: object
+      required: [name, size, contentType]
+      properties:
+        name: { type: string, minLength: 1 }
+        size: { type: integer, minimum: 1 }
+        contentType: { type: string, minLength: 1 }
+    UploadUrlResponse:
+      type: object
+      required: [uploadURL, objectPath]
+      properties:
+        uploadURL: { type: string, format: uri }
+        objectPath: { type: string }
+    ExperimentNotesInput:
+      type: object
+      required: [notes]
+      properties:
+        notes: { type: string, minLength: 10, maxLength: 12000 }
+        code: { type: string, maxLength: 12000 }
+    ExperimentNotesOutput:
+      type: object
+      required: [title, hypothesis, materials, protocol, observations, results, conclusion]
+      properties:
+        title: { type: string }
+        hypothesis: { type: string }
+        materials: { type: string }
+        protocol: { type: string }
+        observations: { type: string }
+        results: { type: string }
+        conclusion: { type: string }

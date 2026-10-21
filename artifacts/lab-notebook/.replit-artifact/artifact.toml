@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Academic Lab Notebook"
+description = "A collaborative electronic lab notebook for scholars and academic guides to document projects, organize experiments, share progress, and attach images and code with AI-assisted summaries."
+version = "1.0.0"
+id = "artifacts/lab-notebook"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21495
+
+[services.development]
+run = "pnpm --filter @workspace/lab-notebook run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/lab-notebook", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/lab-notebook/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21495"
+BASE_PATH = "/"
